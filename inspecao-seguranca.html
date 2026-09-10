@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Inspeção de Segurança</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  body {
+    font-family: "Segoe UI", Roboto, Arial, sans-serif;
+    background: #e8eaf0;
+    color: #1f2430;
+    padding-bottom: 30px;
+  }
+  header {
+    background: #7a1f2b;
+    color: #fff;
+    padding: 12px 14px;
+    box-shadow: 0 2px 6px rgba(0,0,0,.25);
+    position: sticky;
+    top: 0;
+    z-index: 25;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+  }
+  header h1 { font-size: 16px; font-weight: 700; line-height: 1.3; }
+  header h1 span { display: block; font-weight: 300; font-size: 12px; opacity: .85; }
+  .btn {
+    background: #fff;
+    color: #7a1f2b;
+    border: none;
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    min-height: 44px;
+  }
+  .btn.escuro { background: #7a1f2b; color: #fff; }
+  .btn.claro { background: #f5f0f1; color: #7a1f2b; border: 1.5px solid #7a1f2b; }
+  .acoes { display: flex; gap: 6px; }
+
+  .main { padding: 14px 12px; display: flex; flex-direction: column; gap: 14px; }
+  .card {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 3px 12px rgba(0,0,0,.10);
+    padding: 18px 16px;
+  }
+  .sec-titulo {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 16px;
+    font-weight: 700;
+    color: #7a1f2b;
+    margin-bottom: 12px;
+  }
+  .sec-sub { font-size: 13px; color: #667; margin: -6px 0 12px; line-height: 1.4; }
+
+  .form-group { margin-bottom: 14px; }
+  .form-group:last-child { margin-bottom: 0; }
+  .form-group label { display: block; font-size: 14px; font-weight: 600; margin-bottom: 6px; color: #333; }
+  .form-group input, .form-group textarea, .form-group select {
+    width: 100%;
+    padding: 12px;
+    border: 1.5px solid #c3c9d4;
+    border-radius: 8px;
+    font-size: 16px;
+    font-family: inherit;
+    background: #fafbfc;
+    color: #1f2430;
+  }
+  .form-group textarea { resize: vertical; min-height: 72px; }
+  .form-group input:focus, .form-group textarea:focus, .form-group select:focus {
+    outline: 2px solid #7a1f2b;
+    border-color: #7a1f2b;
+  }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+  .check {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px;
+    background: #fafbfc;
+    border: 1.5px solid #dfe4ec;
+    border-radius: 10px;
+    min-height: 50px;
+    margin-bottom: 8px;
+  }
+  .check:last-child { margin-bottom: 0; }
+  .check input[type="checkbox"] { width: 24px; height: 24px; accent-color: #28a745; flex-shrink: 0; }
+  .check .texto { font-size: 15px; flex: 1; }
+  .check.destaque input { accent-color: #e74c3c; }
+
+  .add-btn {
+    width: 100%;
+    margin-top: 10px;
+    background: #7a1f2b;
+    color: #fff;
+    border: none;
+    padding: 13px;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    min-height: 46px;
+  }
+
+  .item-lista { margin-top: 10px; }
+  .item-caixa {
+    background: #fafbfc;
+    border: 1.5px solid #dfe4ec;
+    border-radius: 10px;
+    padding: 12px;
+    margin-bottom: 10px;
+  }
+  .item-caixa:last-child { margin-bottom: 0; }
+  .item-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  .item-top .rotulo { font-size: 13px; font-weight: 700; color: #7a1f2b; }
+  .remover {
+    width: 32px; height: 32px;
+    border: none;
+    background: #e74c3c;
+    color: #fff;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 700;
+    font-size: 14px;
+    min-height: 32px;
+  }
+  .acao-row .check { margin-bottom: 6px; }
+
+  .oculto { display: none !important; }
+
+  .foto-box { margin-top: 14px; }
+  .foto-acoes { display: flex; gap: 8px; }
+  .foto-acoes .btn { flex: 1; }
+  .foto-prev { margin-top: 10px; display: flex; flex-direction: column; gap: 10px; }
+  .foto-thumb { position: relative; }
+  .foto-thumb img { width: 100%; max-height: 240px; object-fit: cover; border-radius: 10px; border: 2px solid #dfe4ec; }
+  .foto-thumb .remover { position: absolute; top: 8px; right: 8px; }
+
+  .acao-pdf {
+    width: 100%;
+    background: #7a1f2b;
+    color: #fff;
+    border: none;
+    padding: 15px;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    min-height: 50px;
+  }
+
+  .modal-fundo {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(20,25,35,.85);
+    z-index: 50;
+    overflow: auto;
+  }
+  .modal-fundo.ativo { display: block; }
+  .modal { background: #d8dce4; padding: 12px 8px 20px; min-height: 100vh; }
+  .modal-top { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+  .modal-top h3 { color: #7a1f2b; font-size: 15px; }
+  .modal-top .btn { min-height: 40px; padding: 8px 12px; font-size: 13px; }
+  .modal-scroll { overflow: auto; border-radius: 6px; }
+
+  .form-pdf {
+    width: 794px;
+    min-height: 1123px;
+    background: #fff;
+    margin: 0 auto;
+    padding: 40px 44px;
+    font-family: "Segoe UI", Roboto, Arial, sans-serif;
+    color: #111;
+  }
+  .form-pdf p, .form-pdf li, .form-pdf td, .form-pdf th { font-size: 14px; line-height: 1.4; }
+  .pf-head { border: 2px solid #7a1f2b; background: #fbf3f4; padding: 12px 16px; margin-bottom: 16px; }
+  .pf-title { font-size: 22px; font-weight: 800; color: #7a1f2b; text-transform: uppercase; letter-spacing: 1px; }
+  .pf-sub { font-size: 12px; color: #555; margin-top: 3px; letter-spacing: .5px; text-transform: uppercase; }
+  .pf-info { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 18px; margin-top: 10px; }
+  .pf-info div { font-size: 13.5px; }
+  .pf-info b { color: #7a1f2b; }
+  .pf-foto { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-top: 10px; }
+  .pf-foto.vazio { display: none; }
+  .pf-foto img { width: 100%; border-radius: 6px; border: 1px solid #b03a2e; }
+  .pf-box { border: 1.5px solid #b03a2e; border-radius: 4px; margin-bottom: 14px; overflow: hidden; }
+  .pf-box h3 { background: #7a1f2b; color: #fff; font-size: 13.5px; padding: 6px 12px; letter-spacing: .3px; }
+  .pf-box .corpo { padding: 10px 12px; }
+  .pf-check-item { display: flex; align-items: center; gap: 8px; padding: 4px 0; font-size: 14px; }
+  .pf-check-item .marca { font-size: 16px; color: #28a745; width: 18px; }
+  .marca-sim { color: #28a745; font-weight: 900; font-size: 15px; margin-right: 5px; }
+  .marca-neg { color: #e74c3c; font-weight: 900; font-size: 15px; margin-right: 5px; }
+  .marca-nao { display: inline-block; width: 15px; height: 15px; border: 2px solid #333; border-radius: 3px; margin-right: 5px; vertical-align: middle; }
+  .f-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #fafbfc;
+    border: 1.5px solid #dfe4ec;
+    border-radius: 10px;
+    padding: 8px;
+    margin-bottom: 8px;
+  }
+  .f-item .f-texto {
+    flex: 1;
+    min-width: 0;
+    padding: 10px;
+    font-size: 16px;
+    border: 1.5px solid #c3c9d4;
+    border-radius: 8px;
+    font-family: inherit;
+    background: #fff;
+  }
+  .f-item .f-texto:focus { outline: 2px solid #7a1f2b; border-color: #7a1f2b; }
+  .btn-marca {
+    border: 2px solid transparent;
+    border-radius: 999px;
+    padding: 8px 10px;
+    font-size: 12px;
+    font-weight: 800;
+    cursor: pointer;
+    min-height: 36px;
+    letter-spacing: .3px;
+    flex-shrink: 0;
+    background: transparent;
+  }
+  .btn-marca.marca-pos { border-color: #28a745; color: #28a745; }
+  .btn-marca.marca-neg { border-color: #e74c3c; color: #e74c3c; }
+  .btn-marca.on.marca-pos { background: #28a745; color: #fff; }
+  .btn-marca.on.marca-neg { background: #e74c3c; color: #fff; }
+  .btn-mic {
+    border: 1.5px solid #7a1f2b;
+    background: #fff;
+    color: #7a1f2b;
+    border-radius: 8px;
+    width: 36px; height: 36px;
+    font-size: 16px;
+    cursor: pointer;
+    flex-shrink: 0;
+    min-height: 36px;
+    min-width: 36px;
+  }
+  .btn-mic.ativo {
+    background: #e74c3c;
+    border-color: #e74c3c;
+    animation: pulse 1s infinite;
+  }
+  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .45; } }
+  .pf-box, .pf-head { page-break-inside: avoid; }
+  .pf-val, .pf-item { overflow-wrap: anywhere; word-break: break-word; }
+  .pf-item { padding: 5px 0; font-size: 14px; white-space: pre-wrap; word-wrap: break-word; border-bottom: 1px dotted #d9c2c0; }
+  .pf-item:last-child { border-bottom: none; }
+  .pf-linha { display: flex; font-size: 14px; padding: 5px 0; border-bottom: 1px dotted #d9c2c0; }
+  .pf-linha:last-child { border-bottom: none; }
+  .pf-linha .pf-rot { font-weight: 700; color: #7a1f2b; width: 90px; flex-shrink: 0; }
+  .pf-linha .pf-val { flex: 1; white-space: pre-wrap; word-wrap: break-word; }
+  .pf-footer { margin-top: 14px; border-top: 2px solid #7a1f2b; padding-top: 8px; display: flex; justify-content: space-between; font-size: 12px; color: #555; }
+  .loading { position: fixed; inset: 0; background: rgba(0,0,0,.45); display: none; align-items: center; justify-content: center; z-index: 70; }
+  .loading.ativo { display: flex; }
+  .loading span { background: #fff; padding: 18px 28px; border-radius: 8px; font-weight: 600; color: #7a1f2b; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Inspeção de Segurança <span>formulário de campo</span></h1>
+  <div class="acoes">
+    <button class="btn" id="btnPrevia">Prévia</button>
+    <button class="btn" id="btnPdfTop">PDF</button>
+    <button class="btn" id="btnNovo">Novo</button>
+  </div>
+</header>
+
+<div class="main">
+
+  <div class="card">
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:0 12px;">
+      <div class="form-group">
+        <label>Empresa</label>
+        <input id="fEmpresa" placeholder="Ex.: Minha Empresa">
+      </div>
+      <div class="form-group">
+        <label>Local</label>
+        <input id="fLocal" placeholder="Ex.: Galpão A">
+      </div>
+      <div class="form-group">
+        <label>Data</label>
+        <input id="fData" type="date">
+      </div>
+      <div class="form-group">
+        <label>Hora</label>
+        <input id="fHora" type="time">
+      </div>
+    </div>
+    <div class="foto-box">
+      <div class="sec-titulo" style="font-size:14px;">Fotos do local / situação</div>
+      <div class="foto-acoes">
+        <input type="file" id="fotoCam" accept="image/*" capture="environment" hidden>
+        <input type="file" id="fotoAnexo" accept="image/*" hidden>
+        <button class="btn escuro" id="btnFotoCam" type="button">Tirar Foto</button>
+        <button class="btn claro" id="btnFotoAnexo" type="button">Anexar Foto</button>
+      </div>
+      <div class="foto-prev oculto" id="fotoPrev"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="sec-titulo">Inspeção Direcionada</div>
+    <div class="sec-sub">Caixas abertas: marcador verde (inspeção positiva) ou vermelho (negativa).</div>
+    <div id="itensVerif"></div>
+    <button class="add-btn" id="addItem">+ Adicionar item verificado</button>
+  </div>
+
+  <div class="card">
+    <div class="sec-titulo">Desvio Identificado</div>
+    <div class="sec-sub">Se houver desvio, descreva em caixas. Caso contrário, marque "Sem desvio".</div>
+    <label class="check destaque">
+      <input type="checkbox" id="semDesvio">
+      <span class="texto">Sem desvio</span>
+    </label>
+    <div id="blocoDesvios">
+      <div class="item-lista" id="desvios"></div>
+      <button class="add-btn" id="addDesvio">+ Adicionar desvio</button>
+    </div>
+  </div>
+
+  <div class="card" id="blocoAcoes">
+    <div class="sec-titulo">Ação Tomada</div>
+    <div class="sec-sub">Desvios apontados e ações em caixas.</div>
+    <div class="item-lista" id="acoes"></div>
+    <button class="add-btn" id="addAcao">+ Adicionar ação</button>
+  </div>
+
+  <div class="card">
+    <div class="sec-titulo">Responsáveis pela Inspeção</div>
+    <div class="sec-sub">Nomes e funções em boxes.</div>
+    <div class="item-lista" id="responsaveis"></div>
+    <button class="add-btn" id="addResp">+ Adicionar responsável</button>
+  </div>
+
+  <button class="acao-pdf" id="btnGerar">Pré-visualizar Formulário</button>
+
+</div>
+
+<div class="modal-fundo" id="modal">
+  <div class="modal">
+    <div class="modal-top">
+      <h3>Prévia do Formulário</h3>
+      <div style="display:flex; gap:6px;">
+        <button class="btn escuro" id="btnPdf">Baixar PDF</button>
+        <button class="btn" id="btnFechar">Fechar</button>
+      </div>
+    </div>
+    <div class="modal-scroll">
+      <div class="form-pdf" id="pdfPreview">
+        <div class="pf-head">
+          <div class="pf-title">Inspeção de Segurança</div>
+          <div class="pf-sub">Registro de verificação em campo</div>
+          <div class="pf-info">
+            <div><b>Empresa:</b> <span id="pv_Empresa"></span></div>
+            <div><b>Local:</b> <span id="pv_Local"></span></div>
+            <div><b>Data:</b> <span id="pv_Data"></span></div>
+            <div><b>Hora:</b> <span id="pv_Hora"></span></div>
+          </div>
+          <div class="pf-foto vazio" id="pv_Foto"></div>
+        </div>
+        <div class="pf-box">
+          <h3>Inspeção Direcionada - Verificados</h3>
+          <div class="corpo" id="pv_Itens"></div>
+        </div>
+        <div class="pf-box">
+          <h3>Desvio Identificado</h3>
+          <div class="corpo" id="pv_Desvios"></div>
+        </div>
+        <div class="pf-box">
+          <h3>Ação Tomada</h3>
+          <div class="corpo" id="pv_Acoes"></div>
+        </div>
+        <div class="pf-box">
+          <h3>Responsáveis pela Inspeção</h3>
+          <div class="corpo" id="pv_Responsaveis"></div>
+        </div>
+        <div class="pf-footer"><span>Formulário de Inspeção de Segurança</span><span id="pv_DataHora"></span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="loading" id="loading"><span>Gerando PDF...</span></div>
+
+<script>
+  const $ = id => document.getElementById(id);
+  const CHAVE = 'inspecao_v1';
+
+  let semDesvio = false;
+  let fotos = [];
+  let micAtivo = null;
+
+  function pararMic() {
+    if (micAtivo) {
+      try { micAtivo.sr.stop(); } catch (e) {}
+      micAtivo.btn.classList.remove('ativo');
+    }
+    micAtivo = null;
+  }
+
+  function configurarMic(alvo, btn) {
+    btn.addEventListener('click', () => {
+      if (micAtivo && micAtivo.btn === btn) { pararMic(); return; }
+      const R = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!R) {
+        alert('Reconhecimento de fala não suportado neste navegador. Use Chrome/Edge (PC ou Android).');
+        return;
+      }
+      pararMic();
+      const sr = new R();
+      sr.lang = 'pt-BR';
+      sr.interimResults = false;
+      sr.continuous = true;
+      btn.classList.add('ativo');
+      sr.onresult = e => {
+        const partes = [];
+        for (let i = e.resultIndex; i < e.results.length; i++) {
+          if (e.results[i].isFinal) partes.push(e.results[i][0].transcript);
+        }
+        if (partes.length) {
+          const pre = alvo.value.trim();
+          alvo.value = (pre ? pre + ' ' : '') + partes.join(' ');
+          alvo.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+      };
+      sr.onend = () => { btn.classList.remove('ativo'); if (micAtivo && micAtivo.sr === sr) micAtivo = null; };
+      sr.onerror = () => { btn.classList.remove('ativo'); if (micAtivo && micAtivo.sr === sr) micAtivo = null; };
+      try { sr.start(); micAtivo = { sr: sr, btn: btn }; } catch (e) { btn.classList.remove('ativo'); }
+    });
+  }
+
+  function adicionarItem(texto, status) {
+    const div = document.createElement('div');
+    div.className = 'f-item';
+    const s = status === 'neg' ? 'neg' : 'pos';
+    div.innerHTML =
+      '<button type="button" class="btn-marca marca-pos' + (s === 'pos' ? ' on' : '') + '">OK</button>' +
+      '<button type="button" class="btn-marca marca-neg' + (s === 'neg' ? ' on' : '') + '">NOK</button>' +
+      '<input class="f-texto" placeholder="Item verificado...">' +
+      '<button type="button" class="btn-mic" title="Falar e transcrever">&#127908;</button>' +
+      '<button type="button" class="remover" title="Remover">x</button>';
+    div.querySelector('.f-texto').value = texto || '';
+    div.querySelector('.marca-pos').addEventListener('click', () => {
+      div.querySelector('.marca-pos').classList.add('on');
+      div.querySelector('.marca-neg').classList.remove('on');
+      aoMudar();
+    });
+    div.querySelector('.marca-neg').addEventListener('click', () => {
+      div.querySelector('.marca-neg').classList.add('on');
+      div.querySelector('.marca-pos').classList.remove('on');
+      aoMudar();
+    });
+    div.querySelector('.f-texto').addEventListener('input', aoMudar);
+    div.querySelector('.remover').addEventListener('click', () => { div.remove(); aoMudar(); });
+    configurarMic(div.querySelector('.f-texto'), div.querySelector('.btn-mic'));
+    $('itensVerif').appendChild(div);
+    return div;
+  }
+
+  function adicionarDesvio(v) {
+    const div = document.createElement('div');
+    div.className = 'causa-item';
+    const num = document.querySelectorAll('#desvios .item-caixa').length + 1;
+    div.innerHTML = '<div class="item-caixa">' +
+      '<div class="item-top"><span class="rotulo">Desvio ' + num + '</span>' +
+      '<div style="display:flex; gap:6px;"><button type="button" class="btn-mic" title="Falar e transcrever">&#127908;</button>' +
+      '<button class="remover" title="Remover">x</button></div></div>' +
+      '<textarea rows="2" placeholder="Descreva o desvio identificado..."></textarea>' +
+      '</div>';
+    div.querySelector('textarea').value = v || '';
+    div.querySelector('textarea').addEventListener('input', aoMudar);
+    div.querySelector('.remover').addEventListener('click', () => { div.remove(); renumera('.desvio-num'); aoMudar(); });
+    configurarMic(div.querySelector('textarea'), div.querySelector('.btn-mic'));
+    $('desvios').appendChild(div);
+    return div;
+  }
+
+  function adicionarAcao(a, corrigido) {
+    const div = document.createElement('div');
+    div.className = 'acao-row';
+    div.innerHTML = '<div class="item-caixa">' +
+      '<div class="item-top"><span class="rotulo rotulo-acao">Ação</span>' +
+      '<div style="display:flex; gap:6px;"><button type="button" class="btn-mic" title="Falar e transcrever">&#127908;</button>' +
+      '<button class="remover" title="Remover">x</button></div></div>' +
+      '<textarea rows="2" placeholder="Descreva a ação tomada para o desvio..."></textarea>' +
+      '<label class="check"><input type="checkbox" class="corrigido"> <span class="texto">Corrigido imediatamente</span></label>' +
+      '</div>';
+    div.querySelector('textarea').value = a || '';
+    div.querySelector('.corrigido').checked = !!corrigido;
+    div.querySelector('textarea').addEventListener('input', aoMudar);
+    div.querySelector('.corrigido').addEventListener('change', aoMudar);
+    div.querySelector('.remover').addEventListener('click', () => { div.remove(); renumera('.rotulo-acao', 'Ação'); aoMudar(); });
+    configurarMic(div.querySelector('textarea'), div.querySelector('.btn-mic'));
+    $('acoes').appendChild(div);
+    return div;
+  }
+
+  function renumera(sel, pre) {
+    document.querySelectorAll(sel).forEach((el, i) => {
+      el.textContent = (pre || 'Desvio') + ' ' + (i + 1);
+    });
+  }
+
+  function adicionarResp(n, f) {
+    const div = document.createElement('div');
+    div.className = 'item-caixa';
+    div.innerHTML = '<div class="item-top"><span class="rotulo">Responsável</span>' +
+      '<div style="display:flex; gap:6px;"><button type="button" class="btn-mic" title="Falar nome e transcrever">&#127908;</button>' +
+      '<button class="remover" title="Remover">x</button></div></div>' +
+      '<div class="grid2">' +
+        '<div class="form-group"><input class="nome" placeholder="Nome *"></div>' +
+        '<div class="form-group"><input class="funcao" placeholder="Função"></div>' +
+      '</div>';
+    div.querySelector('.nome').value = n || '';
+    div.querySelector('.funcao').value = f || '';
+    div.querySelector('.nome').addEventListener('input', aoMudar);
+    div.querySelector('.funcao').addEventListener('input', aoMudar);
+    div.querySelector('.remover').addEventListener('click', () => { div.remove(); aoMudar(); });
+    configurarMic(div.querySelector('.nome'), div.querySelector('.btn-mic'));
+    $('responsaveis').appendChild(div);
+    return div;
+  }
+
+  function atualizaSemDesvio() {
+    semDesvio = $('semDesvio').checked;
+    $('blocoDesvios').classList.toggle('oculto', semDesvio);
+    $('blocoAcoes').classList.toggle('oculto', semDesvio);
+    if (!semDesvio) $('blocoAcoes').querySelectorAll('input, textarea').forEach(el => el.disabled = false);
+    aoMudar();
+  }
+
+  function aoMudar() { salvar(); }
+
+  function adicionarThumb(dataURL) {
+    const thumb = document.createElement('div');
+    thumb.className = 'foto-thumb';
+    const img = document.createElement('img');
+    img.src = dataURL;
+    img.alt = 'Foto';
+    const rem = document.createElement('button');
+    rem.className = 'remover';
+    rem.type = 'button';
+    rem.title = 'Remover foto';
+    rem.textContent = 'x';
+    rem.addEventListener('click', () => {
+      fotos = fotos.filter(f => f !== dataURL);
+      thumb.remove();
+      $('fotoPrev').classList.toggle('oculto', fotos.length === 0);
+      aoMudar();
+    });
+    thumb.appendChild(img);
+    thumb.appendChild(rem);
+    $('fotoPrev').appendChild(thumb);
+  }
+
+  function aoSelecionarFoto(file) {
+    if (!file || !file.type.startsWith('image/')) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+      const img = new Image();
+      img.onload = () => {
+        const max = 1000;
+        let w = img.width, h = img.height;
+        if (w > max) { h = Math.round(h * max / w); w = max; }
+        if (h > max) { w = Math.round(w * max / h); h = max; }
+        const cv = document.createElement('canvas');
+        cv.width = w; cv.height = h;
+        cv.getContext('2d').drawImage(img, 0, 0, w, h);
+        const dataURL = cv.toDataURL('image/jpeg', 0.8);
+        fotos.push(dataURL);
+        adicionarThumb(dataURL);
+        $('fotoPrev').classList.remove('oculto');
+        aoMudar();
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function coletarItens() {
+    return [...document.querySelectorAll('#itensVerif .f-item')].map(c => ({
+      t: c.querySelector('.f-texto').value.trim(),
+      s: c.querySelector('.marca-neg').classList.contains('on') ? 'neg' : 'pos'
+    }));
+  }
+
+  function coletarDesvios() {
+    return [...document.querySelectorAll('#desvios .item-caixa')].map(c => c.querySelector('textarea').value);
+  }
+
+  function coletarAcoes() {
+    return [...document.querySelectorAll('#acoes .item-caixa')].map(c => ({
+      a: c.querySelector('textarea').value,
+      c: c.querySelector('.corrigido').checked
+    }));
+  }
+
+  function coletarResps() {
+    return [...document.querySelectorAll('#responsaveis .item-caixa')].map(r => ({
+      n: r.querySelector('.nome').value,
+      f: r.querySelector('.funcao').value
+    }));
+  }
+
+  function salvar() {
+    const dados = {
+      campos: {
+        empresa: $('fEmpresa').value, local: $('fLocal').value,
+        data: $('fData').value, hora: $('fHora').value
+      },
+      itens: coletarItens(),
+      semDesvio: semDesvio,
+      fotos: fotos,
+
+      desvios: coletarDesvios(),
+      acoes: coletarAcoes(),
+      resps: coletarResps()
+    };
+    try { localStorage.setItem(CHAVE, JSON.stringify(dados)); } catch (e) {}
+  }
+
+  function carregar() {
+    let d = null;
+    try { d = JSON.parse(localStorage.getItem(CHAVE)); } catch (e) {}
+    if (d && d.campos) {
+      $('fEmpresa').value = d.campos.empresa || '';
+      $('fLocal').value = d.campos.local || '';
+      $('fData').value = d.campos.data || '';
+      $('fHora').value = d.campos.hora || '';
+    }
+    (d && d.itens && d.itens.length ? d.itens : [])
+      .forEach(i => adicionarItem(i.t, i.s || (i.m ? 'pos' : 'neg')));
+    if (d && d.desvios) d.desvios.forEach(v => adicionarDesvio(v));
+    if (d && d.acoes) d.acoes.forEach(a => adicionarAcao(a.a, a.c));
+    if (d && d.resps) d.resps.forEach(r => adicionarResp(r.n, r.f));
+    if (d) {
+      fotos = Array.isArray(d.fotos) ? d.fotos : (d.foto ? [d.foto] : []);
+      $('semDesvio').checked = !!d.semDesvio;
+    }
+    fotos.forEach(f => adicionarThumb(f));
+    $('fotoPrev').classList.toggle('oculto', fotos.length === 0);
+    atualizaSemDesvio();
+  }
+
+  function novo() {
+    if (!confirm('Limpar e começar uma nova inspeção?')) return;
+    try { localStorage.removeItem(CHAVE); } catch (e) {}
+    ['fEmpresa','fLocal','fData','fHora'].forEach(id => $(id).value = '');
+    $('semDesvio').checked = false;
+    fotos = [];
+    $('fotoPrev').innerHTML = '';
+    $('fotoPrev').classList.add('oculto');
+    $('itensVerif').innerHTML = '';
+    $('desvios').innerHTML = '';
+    $('acoes').innerHTML = '';
+    $('responsaveis').innerHTML = '';
+    atualizaSemDesvio();
+  }
+
+  function dataBR(iso) {
+    if (!iso) return '';
+    const x = iso.split('-');
+    return x[2] + '/' + x[1] + '/' + x[0];
+  }
+
+  function renderPreview() {
+    $('pv_Empresa').textContent = $('fEmpresa').value.trim() || '—';
+    $('pv_Local').textContent = $('fLocal').value.trim() || '—';
+    $('pv_Data').textContent = dataBR($('fData').value) || '—';
+    $('pv_Hora').textContent = $('fHora').value || '—';
+    $('pv_Foto').innerHTML = fotos.map(u => '<img src="' + u + '">').join('');
+    $('pv_Foto').classList.toggle('vazio', fotos.length === 0);
+    const agora = new Date();
+    const dh = agora.toLocaleDateString('pt-BR') + ' ' + agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    $('pv_DataHora').textContent = 'Gerado em ' + dh;
+
+    const itens = coletarItens().map(i =>
+      '<div class="pf-check-item"><span class="' + (i.s === 'neg' ? 'marca-neg' : 'marca-sim') + '">' + (i.s === 'neg' ? '&#10007;' : '&#10003;') + '</span><span>' + i.t + '</span></div>'
+    ).join('');
+    $('pv_Itens').innerHTML = itens || '<div class="pf-item">Nenhum item cadastrado.</div>';
+
+    let desvios;
+    if (semDesvio) {
+      desvios = '<div class="pf-item"><span class="marca-sim">&#10003;</span> Sem desvio</div>';
+    } else {
+      const ds = coletarDesvios().filter(Boolean);
+      desvios = ds.length
+        ? ds.map((d, i) => '<div class="pf-linha"><div class="pf-rot">' + (i + 1) + '.</div><div class="pf-val">' + d + '</div></div>').join('')
+        : '<div class="pf-item">Nenhum desvio.</div>';
+    }
+    $('pv_Desvios').innerHTML = desvios;
+
+    let acoes;
+    if (semDesvio) {
+      acoes = '<div class="pf-item">Nenhuma ação necessária.</div>';
+    } else {
+      const as = coletarAcoes().filter(a => a.a.trim());
+      acoes = as.length
+        ? as.map((a, i) => '<div class="pf-linha"><div class="pf-rot">' + (i + 1) + '.</div><div class="pf-val">' + a.a +
+            (a.c ? '<br><span class="marca-sim">&#10003;</span> Corrigido imediatamente' : '') + '</div></div>').join('')
+        : '<div class="pf-item">Nenhuma ação registrada.</div>';
+    }
+    $('pv_Acoes').innerHTML = acoes;
+
+    const resps = coletarResps().filter(r => r.n.trim() || r.f.trim());
+    $('pv_Responsaveis').innerHTML = resps.length
+      ? resps.map(r => '<div class="pf-linha"><div class="pf-rot">Nome:</div><div class="pf-val">' + (r.n || '—') +
+          (r.f.trim() ? ' &nbsp;|&nbsp; <b>Função:</b> ' + r.f : '') + '</div></div>').join('')
+      : '<div class="pf-item">Nenhum responsável.</div>';
+  }
+
+  $('fEmpresa').addEventListener('input', aoMudar);
+  $('fLocal').addEventListener('input', aoMudar);
+  $('fData').addEventListener('input', aoMudar);
+  $('fHora').addEventListener('input', aoMudar);
+  $('semDesvio').addEventListener('change', atualizaSemDesvio);
+  $('addItem').addEventListener('click', () => { adicionarItem('', 'pos'); aoMudar(); });
+  $('addDesvio').addEventListener('click', () => { adicionarDesvio(); aoMudar(); });
+  $('addAcao').addEventListener('click', () => { adicionarAcao(); aoMudar(); });
+  $('addResp').addEventListener('click', () => { adicionarResp(); aoMudar(); });
+  $('btnNovo').addEventListener('click', novo);
+
+  $('btnFotoCam').addEventListener('click', () => $('fotoCam').click());
+  $('btnFotoAnexo').addEventListener('click', () => $('fotoAnexo').click());
+  $('fotoCam').addEventListener('change', e => { aoSelecionarFoto(e.target.files[0]); e.target.value = ''; });
+  $('fotoAnexo').addEventListener('change', e => { aoSelecionarFoto(e.target.files[0]); e.target.value = ''; });
+
+  function abrirPrevia() {
+    renderPreview();
+    $('modal').classList.add('ativo');
+  }
+  function gerarPdf() {
+    const btn = $('btnPdf');
+    const topo = $('btnPdfTop');
+    btn.disabled = true;
+    topo.disabled = true;
+    $('loading').classList.add('ativo');
+    const el = $('pdfPreview');
+    const nome = ($('fEmpresa').value.trim() || 'Inspecao') + ' ' + (dataBR($('fData').value) || Date.now());
+    html2pdf().set({
+      margin: 0,
+      filename: 'Inspecao_Seguranca_' + nome.replace(/[^a-zA-Z0-9_\- ]+/g, '').replace(/\s+/g, '_') + '.pdf',
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2, useCORS: true, letterRendering: true, backgroundColor: '#ffffff' },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+      pagebreak: { mode: ['css', 'legacy'] }
+    }).from(el).save().then(() => {
+      btn.disabled = false;
+      topo.disabled = false;
+      $('loading').classList.remove('ativo');
+    }).catch(() => {
+      btn.disabled = false;
+      topo.disabled = false;
+      $('loading').classList.remove('ativo');
+      alert('Não foi possível gerar o PDF. Verifique sua conexão (biblioteca via CDN).');
+    });
+  }
+  $('btnGerar').addEventListener('click', abrirPrevia);
+  $('btnPrevia').addEventListener('click', abrirPrevia);
+  $('btnPdfTop').addEventListener('click', () => {
+    if (!$('modal').classList.contains('ativo')) abrirPrevia();
+    gerarPdf();
+  });
+  $('btnFechar').addEventListener('click', () => $('modal').classList.remove('ativo'));
+  $('modal').addEventListener('click', e => { if (e.target === $('modal')) $('modal').classList.remove('ativo'); });
+  $('btnPdf').addEventListener('click', gerarPdf);
+
+  carregar();
+</script>
+</body>
+</html>

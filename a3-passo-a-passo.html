@@ -1,0 +1,961 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>A3 Estratégico - Passo a Passo</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Segoe UI", Roboto, Arial, sans-serif;
+    background: #e8eaf0;
+    color: #1f2430;
+  }
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 24px;
+    background: #1f4e79;
+    color: #fff;
+    box-shadow: 0 2px 6px rgba(0,0,0,.25);
+    position: sticky;
+    top: 0;
+    z-index: 20;
+  }
+  header h1 { font-size: 20px; font-weight: 600; }
+  header h1 span { font-weight: 300; font-size: 14px; opacity: .85; margin-left: 8px; }
+  .btn {
+    background: #fff;
+    color: #1f4e79;
+    border: none;
+    padding: 9px 16px;
+    border-radius: 6px;
+    font-size: 13.5px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background .15s;
+  }
+  .btn:hover { background: #dce6f5; }
+  .btn.escuro { background: #1f4e79; color: #fff; }
+  .btn.escuro:hover { background: #16395c; }
+  .btn:disabled { opacity: .45; cursor: not-allowed; }
+
+  .tempo-bar {
+    background: #fff;
+    border-bottom: 1px solid #d9dee8;
+    padding: 10px 24px;
+    position: sticky;
+    top: 58px;
+    z-index: 15;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  .tempo-bar .passo-chip {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 6px 11px;
+    border-radius: 999px;
+    background: #e4e8ef;
+    color: #667;
+    font-size: 12.5px;
+    font-weight: 600;
+    cursor: default;
+    border: 2px solid transparent;
+    user-select: none;
+  }
+  .tempo-bar .passo-chip .n {
+    width: 20px; height: 20px;
+    border-radius: 50%;
+    background: #b6bfce;
+    color: #fff;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11.5px;
+  }
+  .tempo-bar .passo-chip.atual { border-color: #1f4e79; background: #eef4fb; color: #1f4e79; }
+  .tempo-bar .passo-chip.atual .n { background: #1f4e79; }
+  .tempo-bar .passo-chip.feito { background: #d4edda; color: #155724; cursor: pointer; }
+  .tempo-bar .passo-chip.feito .n { background: #28a745; }
+  .tempo-bar .passo-chip.bloqueado { opacity: .5; }
+
+  .main { max-width: 780px; margin: 24px auto; padding: 0 16px; }
+  .card {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 3px 12px rgba(0,0,0,.10);
+    padding: 26px 30px 20px;
+  }
+  .passo-head { margin-bottom: 18px; }
+  .passo-head .num {
+    font-size: 13px; font-weight: 700; color: #1f4e79;
+    text-transform: uppercase; letter-spacing: .4px;
+  }
+  .passo-head h2 { font-size: 19px; margin-top: 2px; }
+  .passo-head p { font-size: 13px; color: #667; margin-top: 4px; }
+
+  .step { display: none; }
+  .step.ativo { display: block; animation: fade .2s ease; }
+  @keyframes fade { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; } }
+
+  .form-group { margin-bottom: 16px; }
+  .form-group label { display: block; font-size: 13.5px; font-weight: 600; margin-bottom: 5px; color: #333; }
+  .form-group label .obrig { color: #e74c3c; }
+  .form-group input,
+  .form-group textarea,
+  .form-group select {
+    width: 100%;
+    padding: 9px 11px;
+    border: 1.5px solid #c3c9d4;
+    border-radius: 7px;
+    font-size: 14px;
+    font-family: inherit;
+    background: #fafbfc;
+  }
+  .form-group textarea { resize: vertical; }
+  .form-group input:focus,
+  .form-group textarea:focus,
+  .form-group select:focus { outline: 2px solid #1f4e79; border-color: #1f4e79; }
+  .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+  .plano-rows { display: flex; flex-direction: column; gap: 10px; }
+  .plano-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 110px 150px 30px;
+    gap: 8px;
+    align-items: start;
+    background: #f7f9fc;
+    border: 1px solid #dfe4ec;
+    border-radius: 8px;
+    padding: 10px;
+  }
+  .plano-row input, .plano-row select { font-size: 13px; padding: 8px 9px; }
+  .plano-row .remover {
+    width: 28px; height: 28px;
+    border: none;
+    background: #e74c3c;
+    color: #fff;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 700;
+  }
+  .plano-row .remover:hover { background: #c0392b; }
+  .add-btn {
+    margin-top: 10px;
+    background: #1f4e79;
+    color: #fff;
+    border: none;
+    padding: 9px 14px;
+    border-radius: 7px;
+    cursor: pointer;
+    font-size: 13.5px;
+    font-weight: 600;
+  }
+  .add-btn:hover { background: #16395c; }
+  .aviso {
+    display: none;
+    margin-top: 8px;
+    font-size: 12.5px;
+    color: #e74c3c;
+  }
+  .aviso.mostrar { display: block; }
+
+  .causa-raiz .caixa {
+    border: 2px solid #2e5d8a;
+    border-radius: 8px;
+    padding: 10px;
+    background: #f4f8fc;
+  }
+  .causa-raiz .rotulo { font-size: 12.5px; font-weight: 700; margin-bottom: 5px; color: #333; }
+  .causa-raiz textarea {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1.5px solid #c3c9d4;
+    border-radius: 6px;
+    font-size: 13.5px;
+    font-family: inherit;
+    background: #fff;
+    resize: vertical;
+  }
+  .caixa-problema { border-color: #c0392b; background: #fdf3f3; }
+  .caixa-momento { border-color: #27ae60; background: #f0faf2; }
+  .seta { text-align: center; color: #1f4e79; font-size: 18px; line-height: 1; margin: 4px 0; user-select: none; }
+  .causa-item { margin-bottom: 10px; }
+  .causa-item .caixa { border-style: dashed; background: #fafbfe; }
+  .causa-item .causa-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 5px;
+  }
+  .causa-item .causa-top .rotulo { margin-bottom: 0; }
+  .causa-item .remover {
+    width: 22px; height: 22px;
+    border: none;
+    background: #e74c3c;
+    color: #fff;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: 700;
+    font-size: 12px;
+  }
+  .causa-item .remover:hover { background: #c0392b; }
+
+  .desdobrar-cats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin-top: 2px; }
+  .cat { border: 2px solid #2e5d8a; border-radius: 8px; background: #fafbfe; padding: 8px; }
+  .cat-titulo {
+    background: #1f4e79;
+    color: #fff;
+    font-size: 12px;
+    font-weight: 700;
+    border-radius: 5px;
+    padding: 4px 8px;
+    margin-bottom: 7px;
+    text-transform: uppercase;
+    letter-spacing: .3px;
+    text-align: center;
+  }
+  .add-btn.mini { margin: 6px 0; padding: 5px 10px; font-size: 12px; }
+  .cat-causas { display: flex; flex-direction: column; gap: 6px; }
+  .nota { font-size: 12px; color: #667; font-style: italic; margin: 8px 0 2px; }
+
+  .a3 .chain-cats { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
+  .a3 .chain-cat { border: 1.5px solid #2e5d8a; border-radius: 4px; padding: 3px 5px; background: #f4f8fc; }
+  .a3 .chain-cat-titulo {
+    font-size: 10.5px;
+    font-weight: 700;
+    color: #1f4e79;
+    text-transform: uppercase;
+    letter-spacing: .3px;
+    margin-bottom: 2px;
+    border-bottom: 1px solid #c9d6e4;
+    padding-bottom: 2px;
+  }
+  .a3 .chain-cat-vazio { color: #aaa; font-style: italic; font-size: 11px; }
+
+  .a3 .chain-box {
+    border: 1.5px solid #2e5d8a;
+    border-radius: 4px;
+    padding: 4px 7px;
+    margin: 3px 0;
+    font-size: 11.5px;
+    line-height: 1.3;
+    background: #f4f8fc;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+  }
+  .a3 .chain-arrow { text-align: center; color: #1f4e79; line-height: 1; font-size: 11px; margin: 1px 0; }
+  .a3 .chain-problema { border-color: #c0392b; background: #fdf3f3; font-weight: 600; }
+  .a3 .chain-momento { border-color: #27ae60; background: #f0faf2; font-weight: 600; }
+  .a3 .ctx-item { margin-bottom: 7px; }
+  .a3 .ctx-item:last-child { margin-bottom: 0; }
+  .a3 .ctx-titulo {
+    font-size: 11.5px;
+    font-weight: 700;
+    color: #1f4e79;
+    text-transform: uppercase;
+    letter-spacing: .3px;
+    border-bottom: 1px solid #c9d6e4;
+    margin-bottom: 3px;
+    padding-bottom: 2px;
+  }
+  .a3 .ctx-texto { white-space: pre-wrap; word-wrap: break-word; font-size: 12.5px; }
+  .a3 .ctx-texto.vazio { color: #aaa; font-style: italic; }
+
+  .nav { display: flex; justify-content: space-between; margin-top: 22px; padding-top: 16px; border-top: 1px solid #e6e9ef; }
+
+  .modal-fundo {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(20,25,35,.7);
+    z-index: 40;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 30px 20px;
+    overflow: auto;
+  }
+  .modal-fundo.ativo { display: flex; }
+  .modal {
+    background: #d8dce4;
+    border-radius: 12px;
+    padding: 22px;
+    width: 100%;
+    max-width: 1280px;
+  }
+  .modal-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+  .modal-top h3 { color: #1f4e79; }
+  .modal-scroll { overflow: auto; border-radius: 8px; }
+
+  .a3 {
+    width: 1200px;
+    height: 848px;
+    background: #fff;
+    margin: 0 auto;
+    padding: 34px 36px;
+    font-family: "Segoe UI", Roboto, Arial, sans-serif;
+    color: #111;
+  }
+  .a3 p, .a3 li, .a3 td, .a3 th { font-size: 13px; line-height: 1.35; }
+  .a3-head {
+    border: 2px solid #1f4e79;
+    background: #eef4fb;
+    padding: 10px 14px;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 12px;
+    align-items: center;
+    margin-bottom: 14px;
+  }
+  .a3-head .titulo { font-size: 20px; font-weight: 700; color: #1f4e79; text-transform: uppercase; letter-spacing: .5px; }
+  .a3-head .meta { text-align: right; font-size: 12px; color: #333; line-height: 1.5; }
+  .a3-head .meta b { color: #1f4e79; }
+  .a3-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .a3-box { border: 1.5px solid #2e5d8a; border-radius: 4px; margin-bottom: 12px; overflow: hidden; }
+  .a3-box.titulo-box { border-color: #1f4e79; }
+  .a3-box h3 { background: #1f4e79; color: #fff; font-size: 13px; padding: 5px 10px; letter-spacing: .3px; }
+  .a3-box .corpo { padding: 8px 10px; white-space: pre-wrap; word-wrap: break-word; min-height: 40px; }
+  .a3-box .corpo.vazio { color: #aaa; font-style: italic; }
+  .a3 table { width: 100%; border-collapse: collapse; }
+  .a3 th, .a3 td { border: 1px solid #2e5d8a; padding: 6px 8px; font-size: 12px; vertical-align: top; }
+  .a3 th { background: #dce8f4; font-size: 11.5px; text-align: left; }
+  .status-chip { display: inline-block; padding: 1px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; }
+  .badge-naoiniciado { background: #f0f0f0; color: #555; }
+  .badge-andamento { background: #fff3cd; color: #856404; }
+  .badge-concluido { background: #d4edda; color: #155724; }
+  .a3-footer { margin-top: 8px; border-top: 2px solid #1f4e79; padding-top: 8px; display: flex; justify-content: space-between; font-size: 12px; color: #555; }
+  .loading { position: fixed; inset: 0; background: rgba(0,0,0,.45); display: none; align-items: center; justify-content: center; z-index: 60; }
+  .loading.ativo { display: flex; }
+  .loading span { background: #fff; padding: 18px 28px; border-radius: 8px; font-weight: 600; color: #1f4e79; }
+
+  @media (max-width: 760px) {
+    .plano-row { grid-template-columns: 1fr; }
+    .row-2 { grid-template-columns: 1fr; }
+    .desdobrar-cats { grid-template-columns: 1fr; }
+    .tempo-bar { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>A3 Estratégico <span>passo a passo</span></h1>
+  <div style="display:flex; gap:8px;">
+    <button class="btn" id="btnPreview">Pré-visualizar</button>
+    <button class="btn" id="btnNovo">Novo A3</button>
+  </div>
+</header>
+
+<div class="tempo-bar" id="tempoBar"></div>
+
+<div class="main">
+  <div class="card">
+
+    <div class="step" id="passo1">
+      <div class="passo-head">
+        <div class="num">Passo 1 de 9</div>
+        <h2>Cabeçalho</h2>
+        <p>Dados gerais que identificam o A3.</p>
+      </div>
+      <div class="form-group">
+        <label>Título do A3 <span class="obrig">*</span></label>
+        <input id="fTitulo" placeholder="Ex.: Reduzir perdas no processo de produção">
+      </div>
+      <div class="row-2">
+        <div class="form-group">
+          <label>Empresa / Setor</label>
+          <input id="fEmpresa" placeholder="Ex.: Minha Empresa - Operações">
+        </div>
+        <div class="form-group">
+          <label>Data</label>
+          <input id="fData" type="date">
+        </div>
+      </div>
+      <div class="row-2">
+        <div class="form-group">
+          <label>Autor</label>
+          <input id="fAutor" placeholder="Quem preenche">
+        </div>
+        <div class="form-group">
+          <label>Revisor</label>
+          <input id="fRevisor" placeholder="Quem valida">
+        </div>
+      </div>
+    </div>
+
+    <div class="step" id="passo2">
+      <div class="passo-head">
+        <div class="num">Passo 2 de 9</div>
+        <h2>Contexto / Background</h2>
+        <p>Descreva o contexto, a situação atual e o objetivo para entender o cenário completo.</p>
+      </div>
+      <div class="form-group">
+        <label>Contexto <span class="obrig">*</span></label>
+        <textarea id="fContexto" rows="5" placeholder="Descreva o cenário, a importância estratégica e o vínculo com os objetivos da organização..."></textarea>
+      </div>
+      <div class="form-group">
+        <label>Situação Atual <span class="obrig">*</span></label>
+        <textarea id="fSituacao" rows="5" placeholder="Descreva o problema com dados, números e evidências atuais..."></textarea>
+      </div>
+      <div class="form-group">
+        <label>Objetivo / Meta <span class="obrig">*</span></label>
+        <textarea id="fObjetivo" rows="5" placeholder="Ex.: Reduzir as perdas de 12% para 3% em 6 meses..."></textarea>
+      </div>
+    </div>
+
+    <div class="step" id="passo3">
+      <div class="passo-head">
+        <div class="num">Passo 3 de 9</div>
+        <h2>Desdobrar o Problema</h2>
+        <p>É o efeito do problema — o que causou, mas ainda não é conhecido. Comece na caixa central e desdobre nas 4 caixas horizontais.</p>
+      </div>
+      <div class="causa-raiz desdobrar">
+        <div class="caixa caixa-problema">
+          <div class="rotulo">Caixa central — Problema <span class="obrig">*</span></div>
+          <textarea id="fProblema" rows="2" placeholder="Qual é o problema que está sendo analisado?"></textarea>
+        </div>
+        <div class="seta">&#9660;</div>
+        <div class="desdobrar-cats">
+          <div class="cat" data-cat="Metodo">
+            <div class="cat-titulo">Método</div>
+            <button class="add-btn mini" type="button">+ Caixa</button>
+            <div class="cat-causas"></div>
+          </div>
+          <div class="cat" data-cat="Maquina">
+            <div class="cat-titulo">Máquina</div>
+            <button class="add-btn mini" type="button">+ Caixa</button>
+            <div class="cat-causas"></div>
+          </div>
+          <div class="cat" data-cat="MaoDeObra">
+            <div class="cat-titulo">Mão-de-Obra</div>
+            <button class="add-btn mini" type="button">+ Caixa</button>
+            <div class="cat-causas"></div>
+          </div>
+          <div class="cat" data-cat="Material">
+            <div class="cat-titulo">Material</div>
+            <button class="add-btn mini" type="button">+ Caixa</button>
+            <div class="cat-causas"></div>
+          </div>
+        </div>
+        <div class="nota">Em cada caixa horizontal, abra novas caixas abaixo para desdobrar as causas (5 Porquês). É obrigatório preencher a caixa central e ao menos 1 caixa em qualquer categoria.</div>
+      </div>
+    </div>
+
+    <div class="step" id="passo4">
+      <div class="passo-head">
+        <div class="num">Passo 4 de 9</div>
+        <h2>Análise de Causa Raiz</h2>
+        <p>Confirme a causa raiz: desdobre em caixas de "por quê?" até chegar ao momento do processo onde ele acontece.</p>
+      </div>
+      <div class="causa-raiz">
+        <div id="causasRaiz"></div>
+        <button class="add-btn" id="addCausa">+ Adicionar por quê?</button>
+        <div class="seta">&#9660;</div>
+        <div class="caixa caixa-momento">
+          <div class="rotulo">Em qual momento do processo ocorre o problema? <span class="obrig">*</span></div>
+          <textarea id="fMomento" rows="2" placeholder="Ex.: Durante a troca de produto (setup) na linha de produção..."></textarea>
+        </div>
+      </div>
+    </div>
+
+    <div class="step" id="passo5">
+      <div class="passo-head">
+        <div class="num">Passo 5 de 9</div>
+        <h2>Contra-medidas</h2>
+        <p>Quais ações diretas combatem cada causa raiz?</p>
+      </div>
+      <div class="form-group">
+        <label>Contra-medidas <span class="obrig">*</span></label>
+        <textarea id="fContramedidas" rows="6" placeholder="- Ação 1...\n- Ação 2..."></textarea>
+      </div>
+    </div>
+
+    <div class="step" id="passo6">
+      <div class="passo-head">
+        <div class="num">Passo 6 de 9</div>
+        <h2>Plano de Ação</h2>
+        <p>Detalhe quem faz o quê e até quando. Adicione ao menos uma ação com o campo "Ação" preenchido.</p>
+      </div>
+      <div class="plano-rows" id="planoRows"></div>
+      <button class="add-btn" id="addPlano">+ Adicionar ação</button>
+    </div>
+
+    <div class="step" id="passo7">
+      <div class="passo-head">
+        <div class="num">Passo 7 de 9</div>
+        <h2>Acompanhamento</h2>
+        <p>Como você vai medir o progresso ao longo do tempo?</p>
+      </div>
+      <div class="form-group">
+        <label>Indicadores <span class="obrig">*</span></label>
+        <textarea id="fIndicadores" rows="5" placeholder="Ex.: Taxa de perda mensal (%), tempo de setup (min), OEE..."></textarea>
+      </div>
+    </div>
+
+    <div class="step" id="passo8">
+      <div class="passo-head">
+        <div class="num">Passo 8 de 9</div>
+        <h2>Resultados</h2>
+        <p>Quais resultados são esperados (e depois, os obtidos)?</p>
+      </div>
+      <div class="form-group">
+        <label>Resultados <span class="obrig">*</span></label>
+        <textarea id="fResultados" rows="5" placeholder="Esperado: ...\nObtido: ..."></textarea>
+      </div>
+    </div>
+
+    <div class="step" id="passo9">
+      <div class="passo-head">
+        <div class="num">Passo 9 de 9</div>
+        <h2>Lições Aprendidas</h2>
+        <p>O que ficou de aprendizado e quais os próximos passos?</p>
+      </div>
+      <div class="form-group">
+        <label>Lições / Próximos passos <span class="obrig">*</span></label>
+        <textarea id="fLicoes" rows="5" placeholder="Padronizar, replicar para outros setores, novo ciclo PDCA..."></textarea>
+      </div>
+    </div>
+
+    <div class="aviso" id="avisoEtapa">Preencha os campos obrigatórios deste passo para continuar.</div>
+
+    <div class="nav">
+      <button class="btn" id="btnAnterior">Anterior</button>
+      <button class="btn escuro" id="btnProximo">Próximo</button>
+    </div>
+
+  </div>
+</div>
+
+<div class="modal-fundo" id="modal">
+  <div class="modal">
+    <div class="modal-top">
+      <h3>Pré-visualização do A3</h3>
+      <div style="display:flex; gap:8px;">
+        <button class="btn escuro" id="btnPdf">Gerar PDF</button>
+        <button class="btn" id="btnFechar">Fechar</button>
+      </div>
+    </div>
+    <div class="modal-scroll">
+      <div class="a3" id="a3Preview">
+        <div class="a3-head">
+          <div class="titulo" id="p_Titulo">&nbsp;</div>
+          <div class="meta" id="p_Meta"></div>
+        </div>
+        <div class="a3-cols">
+          <div>
+            <div class="a3-box titulo-box">
+              <h3>1. Contexto / Background</h3>
+              <div class="corpo">
+                <div class="ctx-item"><div class="ctx-titulo">Contexto</div><div class="ctx-texto vazio" id="p_Contexto"></div></div>
+                <div class="ctx-item"><div class="ctx-titulo">Situação Atual</div><div class="ctx-texto vazio" id="p_Situacao"></div></div>
+                <div class="ctx-item"><div class="ctx-titulo">Objetivo / Meta</div><div class="ctx-texto vazio" id="p_Objetivo"></div></div>
+              </div>
+            </div>
+            <div class="a3-box"><h3>2. Desdobrar o Problema</h3><div class="corpo vazio" id="p_Desdobrar"></div></div>
+            <div class="a3-box"><h3>3. Análise de Causa Raiz</h3><div class="corpo vazio" id="p_Causas"></div></div>
+          </div>
+          <div>
+            <div class="a3-box"><h3>4. Contra-medidas</h3><div class="corpo vazio" id="p_Contramedidas"></div></div>
+            <div class="a3-box"><h3>5. Plano de Ação</h3><div class="corpo">
+              <table>
+                <thead><tr><th style="width:44%">Ação</th><th style="width:18%">Responsável</th><th style="width:16%">Prazo</th><th style="width:22%">Status</th></tr></thead>
+                <tbody id="p_Plano"></tbody>
+              </table></div></div>
+            <div class="a3-box"><h3>6. Acompanhamento</h3><div class="corpo vazio" id="p_Indicadores"></div></div>
+            <div class="a3-box"><h3>7. Resultados</h3><div class="corpo vazio" id="p_Resultados"></div></div>
+            <div class="a3-box"><h3>8. Lições Aprendidas / Próximos Passos</h3><div class="corpo vazio" id="p_Licoes"></div></div>
+          </div>
+        </div>
+        <div class="a3-footer"><span>A3 Estratégico - uma página de gestão</span><span id="p_FooterMeta"></span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="loading" id="loading"><span>Gerando PDF...</span></div>
+
+<script>
+  const $ = id => document.getElementById(id);
+  const TOT = 9;
+  const CHAVE = 'a3passo_v2';
+  const CATS = { Metodo: 'Método', Maquina: 'Máquina', MaoDeObra: 'Mão-de-Obra', Material: 'Material' };
+
+  const passos = [
+    { titulo: 'Cabeçalho', campos: ['fTitulo'] },
+    { titulo: 'Contexto', campos: ['fContexto', 'fSituacao', 'fObjetivo'] },
+    { titulo: 'Desdobrar', campos: ['fProblema'] },
+    { titulo: 'Causa Raiz', campos: ['fMomento'] },
+    { titulo: 'Contra-medidas', campos: ['fContramedidas'] },
+    { titulo: 'Plano de Ação', campos: [] },
+    { titulo: 'Acompanh.', campos: ['fIndicadores'] },
+    { titulo: 'Resultados', campos: ['fResultados'] },
+    { titulo: 'Lições', campos: ['fLicoes'] }
+  ];
+
+  let atual = 1;
+  const feitos = {};
+
+  function maxDesbloqueado() {
+    let m = 1;
+    for (let i = 1; i <= TOT; i++) {
+      if (i > 1 && !feitos[i - 1]) break;
+      m = i;
+    }
+    return m;
+  }
+
+  function desenhaBarra() {
+    const m = maxDesbloqueado();
+    $('tempoBar').innerHTML = passos.map((p, i) => {
+      const n = i + 1;
+      const cls = n === atual ? 'atual' : (feitos[n] ? 'feito' : 'bloqueado');
+      const icon = feitos[n] ? '&#10003;' : n;
+      return '<div class="passo-chip ' + cls + '" data-passo="' + n + '"><span class="n">' + icon + '</span>' + p.titulo + '</div>';
+    }).join('');
+    $('tempoBar').querySelectorAll('.passo-chip').forEach(ch => {
+      ch.addEventListener('click', () => {
+        const n = parseInt(ch.dataset.passo);
+        if (n === atual) return;
+        if (n <= m) irPara(n);
+      });
+    });
+  }
+
+  function passoValido(n) {
+    if (n === 3) {
+      const temProblema = $('fProblema').value.trim() !== '';
+      return temProblema && temAlgumaCausa();
+    }
+    if (n === 4) {
+      const temMomento = $('fMomento').value.trim() !== '';
+      const temCausa = [...document.querySelectorAll('#causasRaiz .causa-item')]
+        .some(c => c.querySelector('textarea').value.trim() !== '');
+      return temMomento && temCausa;
+    }
+    if (n === 6) {
+      const rows = [...document.querySelectorAll('#planoRows .plano-row')];
+      return rows.some(r => r.querySelector('.acao').value.trim() !== '');
+    }
+    return passos[n - 1].campos.every(id => $(id).value.trim() !== '');
+  }
+
+  function irPara(n) {
+    atual = n;
+    atualizarNavegacao();
+  }
+
+  function atualizarNavegacao() {
+    document.querySelectorAll('.step').forEach(s => s.classList.remove('ativo'));
+    $('passo' + atual).classList.add('ativo');
+    $('btnAnterior').disabled = atual === 1;
+    if (atual === TOT) {
+      $('btnProximo').textContent = 'Gerar PDF';
+    } else {
+      $('btnProximo').textContent = 'Próximo';
+    }
+    $('btnProximo').disabled = !passoValido(atual);
+    $('avisoEtapa').classList.toggle('mostrar', false);
+    desenhaBarra();
+    renderPreview();
+    salvar();
+  }
+
+  function adicionarPlano(a, r, p, s) {
+    const div = document.createElement('div');
+    div.className = 'plano-row';
+    div.innerHTML = '<input class="acao" placeholder="Ação *">' +
+      '<input class="resp" placeholder="Responsável">' +
+      '<input class="prazo" placeholder="Prazo">' +
+      '<select class="status">' +
+        '<option value="Não iniciado">Não iniciado</option>' +
+        '<option value="Em andamento">Em andamento</option>' +
+        '<option value="Concluído">Concluído</option>' +
+      '</select>' +
+      '<button class="remover" title="Remover">x</button>';
+    const sel = div.querySelector('.status');
+    if (s) sel.value = s;
+    div.querySelector('.acao').value = a || '';
+    div.querySelector('.resp').value = r || '';
+    div.querySelector('.prazo').value = p || '';
+    div.querySelectorAll('input').forEach(i => i.addEventListener('input', aoMudar));
+    div.querySelector('.status').addEventListener('change', aoMudar);
+    div.querySelector('.remover').addEventListener('click', () => {
+      div.remove();
+      aoMudar();
+    });
+    $('planoRows').appendChild(div);
+    return div;
+  }
+
+  function aoMudar() {
+    for (let i = 1; i <= TOT; i++) {
+      if (!passoValido(i)) delete feitos[i];
+    }
+    if (passoValido(atual)) feitos[atual] = true;
+    $('avisoEtapa').classList.toggle('mostrar', !passoValido(atual));
+    atualizarNavegacao();
+  }
+
+  function adicionarCausa(v) {
+    const div = document.createElement('div');
+    div.className = 'causa-item';
+    const n = document.querySelectorAll('#causasRaiz .causa-item').length + 1;
+    div.innerHTML = '<div class="caixa">' +
+      '<div class="causa-top">' +
+        '<div class="rotulo">Por quê? <span>' + n + '</span></div>' +
+        '<button class="remover" title="Remover">x</button>' +
+      '</div>' +
+      '<textarea rows="2" placeholder="Por que a causa acima acontece?"></textarea>' +
+      '</div>';
+    div.querySelector('textarea').value = v || '';
+    div.querySelector('textarea').addEventListener('input', aoMudar);
+    div.querySelector('.remover').addEventListener('click', () => {
+      div.remove();
+      renumeraCausas();
+      aoMudar();
+    });
+    $('causasRaiz').appendChild(div);
+    return div;
+  }
+
+  function adicionarCategoriaCausa(cat, v) {
+    const box = document.querySelector('.desdobrar-cats .cat[data-cat="' + cat + '"] .cat-causas');
+    const div = document.createElement('div');
+    div.className = 'causa-item';
+    div.innerHTML = '<div class="caixa">' +
+      '<div class="causa-top" style="justify-content:flex-end; margin-bottom:0;">' +
+        '<button class="remover" title="Remover">x</button>' +
+      '</div>' +
+      '<textarea rows="2" placeholder="Desdobre: por que, nesse item, o problema acontece?"></textarea>' +
+      '</div>';
+    div.querySelector('textarea').value = v || '';
+    div.querySelector('textarea').addEventListener('input', aoMudar);
+    div.querySelector('.remover').addEventListener('click', () => {
+      div.remove();
+      aoMudar();
+    });
+    box.appendChild(div);
+    return div;
+  }
+
+  function causaDe(cat) {
+    return [...document.querySelectorAll('.desdobrar-cats .cat[data-cat="' + cat + '"] .cat-causas textarea')]
+      .map(t => t.value.trim())
+      .filter(Boolean);
+  }
+
+  function temAlgumaCausa() {
+    return Object.keys(CATS).some(cat => causaDe(cat).length > 0);
+  }
+
+  function renumeraCausas() {
+    document.querySelectorAll('#causasRaiz .causa-item .causa-top .rotulo span').forEach((s, i) => {
+      s.textContent = i + 1;
+    });
+  }
+
+  function previewChip(s) {
+    const t = (s || '').trim().toLowerCase();
+    const cls = (t === 'concluído' || t === 'concluido') ? 'badge-concluido'
+             : t === 'em andamento' ? 'badge-andamento'
+             : 'badge-naoiniciado';
+    return '<span class="status-chip ' + cls + '">' + s + '</span>';
+  }
+
+  function renderPreview() {
+    const campos = {
+      fTitulo: 'p_Titulo', fContexto: 'p_Contexto', fSituacao: 'p_Situacao',
+      fObjetivo: 'p_Objetivo', fContramedidas: 'p_Contramedidas',
+      fIndicadores: 'p_Indicadores', fResultados: 'p_Resultados', fLicoes: 'p_Licoes'
+    };
+    $('p_Titulo').textContent = $('fTitulo').value.trim() || 'A3 Estratégico';
+    const meta = [];
+    if ($('fEmpresa').value.trim()) meta.push('<b>' + $('fEmpresa').value.trim() + '</b>');
+    const dt = $('fData').value;
+    if (dt) { const x = dt.split('-'); meta.push('Data: ' + x[2] + '/' + x[1] + '/' + x[0]); }
+    $('p_Meta').innerHTML = meta.join('<br>');
+    $('p_FooterMeta').textContent = 'Autor: ' + ($('fAutor').value.trim() || '-') + '  |  Revisor: ' + ($('fRevisor').value.trim() || '-');
+    Object.keys(campos).forEach(k => {
+      const el = $(campos[k]);
+      const v = $(k).value.trim();
+      el.textContent = v;
+      el.classList.toggle('vazio', !v);
+    });
+
+    let dd = '';
+    const problema = $('fProblema').value.trim();
+    if (problema) dd += '<div class="chain-box chain-problema">Caixa central — Problema: ' + problema + '</div>';
+    let catsHtml = '';
+    Object.keys(CATS).forEach(key => {
+      const itens = causaDe(key).map(c => '<div class="chain-box">' + c + '</div>').join('');
+      catsHtml += '<div class="chain-cat"><div class="chain-cat-titulo">' + CATS[key] + '</div>' +
+        (itens || '<div class="chain-cat-vazio">sem causas</div>') + '</div>';
+    });
+    if (catsHtml) {
+      if (dd) dd += '<div class="chain-arrow">&#9660;</div>';
+      dd += '<div class="chain-cats">' + catsHtml + '</div>';
+    }
+    $('p_Desdobrar').innerHTML = dd;
+    $('p_Desdobrar').classList.toggle('vazio', !dd);
+
+    let cadeia = '';
+    document.querySelectorAll('#causasRaiz .causa-item').forEach(c => {
+      const v = c.querySelector('textarea').value.trim();
+      if (v) {
+        if (cadeia) cadeia += '<div class="chain-arrow">&#9660; por quê?</div>';
+        cadeia += '<div class="chain-box">' + v + '</div>';
+      }
+    });
+    const momento = $('fMomento').value.trim();
+    if (cadeia) cadeia += '<div class="chain-arrow">&#9660;</div>';
+    if (momento) cadeia += '<div class="chain-box chain-momento">Momento do processo: ' + momento + '</div>';
+    $('p_Causas').innerHTML = cadeia;
+    $('p_Causas').classList.toggle('vazio', !cadeia);
+
+    const linhas = [];
+    document.querySelectorAll('#planoRows .plano-row').forEach(tr => {
+      const a = tr.querySelector('.acao').value.trim();
+      const r = tr.querySelector('.resp').value.trim();
+      const p = tr.querySelector('.prazo').value.trim();
+      const s = tr.querySelector('.status').value;
+      if (a || r || p) {
+        linhas.push('<tr><td>' + a + '</td><td>' + r + '</td><td>' + p + '</td><td>' + previewChip(s) + '</td></tr>');
+      }
+    });
+    $('p_Plano').innerHTML = linhas.join('') || '<tr><td colspan="4" style="color:#aaa;font-style:italic;text-align:center">Sem ações cadastradas</td></tr>';
+  }
+
+  function salvar() {
+    const dados = { atual: atual, feitos: feitos, campos: {}, plano: [], porques: [], categorias: {} };
+    ['fTitulo','fEmpresa','fData','fAutor','fRevisor','fContexto','fSituacao','fObjetivo',
+     'fProblema','fMomento','fContramedidas','fIndicadores','fResultados','fLicoes'].forEach(id => {
+      dados.campos[id] = $(id).value;
+    });
+    document.querySelectorAll('#planoRows .plano-row').forEach(r => {
+      dados.plano.push({
+        a: r.querySelector('.acao').value,
+        resp: r.querySelector('.resp').value,
+        prazo: r.querySelector('.prazo').value,
+        s: r.querySelector('.status').value
+      });
+    });
+    document.querySelectorAll('#causasRaiz .causa-item').forEach(c => {
+      dados.porques.push(c.querySelector('textarea').value);
+    });
+    Object.keys(CATS).forEach(cat => {
+      dados.categorias[cat] = causaDe(cat);
+    });
+    try { localStorage.setItem(CHAVE, JSON.stringify(dados)); } catch (e) {}
+  }
+
+  function carregar() {
+    let dados = null;
+    try { dados = JSON.parse(localStorage.getItem(CHAVE)); } catch (e) {}
+    if (!dados) return;
+    if (dados.campos) {
+      Object.keys(dados.campos).forEach(id => {
+        if ($(id)) $(id).value = dados.campos[id];
+      });
+    }
+    if (dados.plano && dados.plano.length) {
+      dados.plano.forEach(p => adicionarPlano(p.a, p.resp, p.prazo, p.s));
+    }
+    if (dados.porques && dados.porques.length) {
+      dados.porques.forEach(p => adicionarCausa(p));
+    }
+    if (dados.categorias) {
+      Object.keys(CATS).forEach(cat => {
+        (dados.categorias[cat] || []).forEach(c => adicionarCategoriaCausa(cat, c));
+      });
+    }
+    if (dados.feitos) Object.assign(feitos, dados.feitos);
+    if (dados.atual) atual = Math.min(dados.atual, TOT);
+    atual = Math.min(atual, maxDesbloqueado());
+  }
+
+  function novaA3() {
+    if (!confirm('Limpar todos os campos e começar um novo A3?')) return;
+    try { localStorage.removeItem(CHAVE); } catch (e) {}
+    ['fTitulo','fEmpresa','fData','fAutor','fRevisor','fContexto','fSituacao','fObjetivo',
+     'fProblema','fMomento','fContramedidas','fIndicadores','fResultados','fLicoes'].forEach(id => $(id).value = '');
+    $('planoRows').innerHTML = '';
+    $('causasRaiz').innerHTML = '';
+    document.querySelectorAll('.desdobrar-cats .cat-causas').forEach(c => c.innerHTML = '');
+    Object.keys(feitos).forEach(k => delete feitos[k]);
+    atual = 1;
+    atualizarNavegacao();
+  }
+
+  ['fTitulo','fEmpresa','fData','fAutor','fRevisor','fContexto','fSituacao','fObjetivo',
+   'fProblema','fMomento','fContramedidas','fIndicadores','fResultados','fLicoes'].forEach(id => {
+    $(id).addEventListener('input', aoMudar);
+  });
+
+  $('addPlano').addEventListener('click', () => { adicionarPlano(); aoMudar(); });
+  $('addCausa').addEventListener('click', () => { adicionarCausa(); aoMudar(); });
+  document.querySelectorAll('.desdobrar-cats .cat .add-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      adicionarCategoriaCausa(btn.closest('.cat').dataset.cat);
+      aoMudar();
+    });
+  });
+
+  $('btnAnterior').addEventListener('click', () => {
+    if (atual > 1) {
+      if (!passoValido(atual)) delete feitos[atual];
+      irPara(atual - 1);
+    }
+  });
+
+  $('btnProximo').addEventListener('click', () => {
+    if (atual === TOT) {
+      abrirModal();
+      return;
+    }
+    if (atual < TOT && passoValido(atual)) {
+      feitos[atual] = true;
+      irPara(atual + 1);
+    }
+  });
+
+  function abrirModal() {
+    renderPreview();
+    $('modal').classList.add('ativo');
+  }
+  $('btnPreview').addEventListener('click', abrirModal);
+  $('btnFechar').addEventListener('click', () => $('modal').classList.remove('ativo'));
+  $('modal').addEventListener('click', e => { if (e.target === $('modal')) $('modal').classList.remove('ativo'); });
+  $('btnNovo').addEventListener('click', novaA3);
+
+  $('btnPdf').addEventListener('click', () => {
+    $('btnPdf').disabled = true;
+    $('loading').classList.add('ativo');
+    const el = $('a3Preview');
+    const dt = $('fData').value || new Date().toISOString().slice(0, 10);
+    html2pdf().set({
+      margin: 0,
+      filename: 'A3_Estrategico_' + dt + '.pdf',
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2, useCORS: true, letterRendering: true, backgroundColor: '#ffffff' },
+      jsPDF: { unit: 'mm', format: 'a3', orientation: 'landscape' },
+      pagebreak: { mode: ['avoid-all'] }
+    }).from(el).save().then(() => {
+      $('btnPdf').disabled = false;
+      $('loading').classList.remove('ativo');
+    }).catch(() => {
+      $('btnPdf').disabled = false;
+      $('loading').classList.remove('ativo');
+      alert('Não foi possível gerar o PDF. Verifique sua conexão (biblioteca carregada via CDN).');
+    });
+  });
+
+  carregar();
+  atualizarNavegacao();
+</script>
+</body>
+</html>

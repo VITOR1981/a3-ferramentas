@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>A3 Estratégico - Gerador de PDF</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Segoe UI", Roboto, Arial, sans-serif;
+    background: #e8eaf0;
+    color: #1f2430;
+  }
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 24px;
+    background: #1f4e79;
+    color: #fff;
+    box-shadow: 0 2px 6px rgba(0,0,0,.25);
+    position: sticky;
+    top: 0;
+    z-index: 20;
+  }
+  header h1 { font-size: 20px; font-weight: 600; letter-spacing: .3px; }
+  header h1 span { font-weight: 300; font-size: 14px; opacity: .85; margin-left: 8px; }
+  .btn {
+    background: #fff;
+    color: #1f4e79;
+    border: none;
+    padding: 10px 18px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background .15s;
+  }
+  .btn:hover { background: #dce6f5; }
+  .btn:disabled { opacity: .5; cursor: wait; }
+  .wrapper {
+    display: grid;
+    grid-template-columns: 380px 1fr;
+    gap: 20px;
+    padding: 20px;
+    max-width: 1700px;
+    margin: 0 auto;
+  }
+  .form-panel {
+    background: #fff;
+    border-radius: 10px;
+    padding: 18px;
+    box-shadow: 0 2px 8px rgba(0,0,0,.10);
+    align-self: start;
+    position: sticky;
+    top: 76px;
+    max-height: calc(100vh - 96px);
+    overflow-y: auto;
+  }
+  .form-panel h2 {
+    font-size: 15px;
+    margin-bottom: 12px;
+    color: #1f4e79;
+    border-bottom: 2px solid #1f4e79;
+    padding-bottom: 6px;
+  }
+  .form-group { margin-bottom: 14px; }
+  .form-group label {
+    display: block;
+    font-size: 12.5px;
+    font-weight: 600;
+    margin-bottom: 4px;
+    color: #444;
+  }
+  .form-group input,
+  .form-group textarea,
+  .form-group select {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid #c3c9d4;
+    border-radius: 6px;
+    font-size: 13px;
+    font-family: inherit;
+    background: #fafbfc;
+  }
+  .form-group textarea { resize: vertical; }
+  .form-group input:focus,
+  .form-group textarea:focus,
+  .form-group select:focus {
+    outline: 2px solid #1f4e79;
+    border-color: #1f4e79;
+  }
+  .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .plano-rows { display: flex; flex-direction: column; gap: 8px; }
+  .plano-row {
+    display: grid;
+    grid-template-columns: 1fr 20px;
+    gap: 6px;
+    align-items: start;
+  }
+  .plano-row .campos { display: grid; gap: 4px; }
+  .plano-row .remover {
+    width: 22px;
+    height: 22px;
+    border: none;
+    background: #e74c3c;
+    color: #fff;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 700;
+    font-size: 13px;
+    line-height: 1;
+  }
+  .add-btn {
+    margin-top: 8px;
+    background: #1f4e79;
+    color: #fff;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+  }
+  .add-btn:hover { background: #16395c; }
+
+  .preview-panel { min-width: 0; }
+  .preview-scroll {
+    background: #d8dce4;
+    border-radius: 10px;
+    padding: 24px;
+    overflow-x: auto;
+  }
+  .a3 {
+    width: 1200px;
+    height: 848px;
+    background: #fff;
+    margin: 0 auto;
+    padding: 34px 36px;
+    font-family: "Segoe UI", Roboto, Arial, sans-serif;
+    color: #111;
+    box-shadow: 0 4px 16px rgba(0,0,0,.18);
+  }
+  .a3 * { box-sizing: border-box; }
+  .a3 p, .a3 li, .a3 td, .a3 th { font-size: 13px; line-height: 1.35; }
+  .a3-head {
+    border: 2px solid #1f4e79;
+    background: #eef4fb;
+    padding: 10px 14px;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 12px;
+    align-items: center;
+    margin-bottom: 14px;
+  }
+  .a3-head .titulo {
+    font-size: 20px;
+    font-weight: 700;
+    color: #1f4e79;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+  }
+  .a3-head .meta {
+    text-align: right;
+    font-size: 12px;
+    color: #333;
+    line-height: 1.5;
+  }
+  .a3-head .meta b { color: #1f4e79; }
+  .a3-cols {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  .a3-box {
+    border: 1.5px solid #2e5d8a;
+    border-radius: 4px;
+    margin-bottom: 12px;
+    overflow: hidden;
+  }
+  .a3-box.titulo-box { border-color: #1f4e79; }
+  .a3-box h3 {
+    background: #1f4e79;
+    color: #fff;
+    font-size: 13px;
+    padding: 5px 10px;
+    letter-spacing: .3px;
+  }
+  .a3-box .corpo { padding: 8px 10px; white-space: pre-wrap; word-wrap: break-word; min-height: 40px; }
+  .a3-box .corpo.vazio { color: #aaa; font-style: italic; }
+  .a3 table { width: 100%; border-collapse: collapse; }
+  .a3 th, .a3 td {
+    border: 1px solid #2e5d8a;
+    padding: 6px 8px;
+    font-size: 12px;
+    vertical-align: top;
+  }
+  .a3 th { background: #dce8f4; font-size: 11.5px; text-align: left; }
+  .a3 .ctx-item { margin-bottom: 7px; }
+  .a3 .ctx-item:last-child { margin-bottom: 0; }
+  .a3 .ctx-titulo {
+    font-size: 11.5px;
+    font-weight: 700;
+    color: #1f4e79;
+    text-transform: uppercase;
+    letter-spacing: .3px;
+    border-bottom: 1px solid #c9d6e4;
+    margin-bottom: 3px;
+    padding-bottom: 2px;
+  }
+  .a3 .ctx-texto { white-space: pre-wrap; word-wrap: break-word; font-size: 12.5px; }
+  .a3 .ctx-texto.vazio { color: #aaa; font-style: italic; }
+  .plano-preenchido { min-height: 120px; }
+  .status-chip { display: inline-block; padding: 1px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; }
+  .badge-naoiniciado { background: #f0f0f0; color: #555; }
+  .badge-andamento { background: #fff3cd; color: #856404; }
+  .badge-concluido { background: #d4edda; color: #155724; }
+  .a3-footer {
+    margin-top: 14px;
+    border-top: 2px solid #1f4e79;
+    padding-top: 8px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    color: #555;
+  }
+  .loading { position: fixed; inset: 0; background: rgba(0,0,0,.45); display: none; align-items: center; justify-content: center; z-index: 99; }
+  .loading.ativo { display: flex; }
+  .loading span { background: #fff; padding: 18px 28px; border-radius: 8px; font-weight: 600; color: #1f4e79; }
+  @media (max-width: 1200px) {
+    .wrapper { grid-template-columns: 1fr; }
+    .form-panel { position: static; max-height: none; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>A3 Estratégico <span>pensar, planejar e agir em uma página</span></h1>
+  <button class="btn" id="btnPdf">Gerar PDF</button>
+</header>
+
+<div class="wrapper">
+  <aside class="form-panel">
+    <h2>Cabeçalho</h2>
+    <div class="form-group">
+      <label>Título do A3</label>
+      <input id="fTitulo" value="Reduzir perdas no processo de produção">
+    </div>
+    <div class="row-2">
+      <div class="form-group">
+        <label>Empresa / Setor</label>
+        <input id="fEmpresa" placeholder="Ex.: Minha Empresa - Operações">
+      </div>
+      <div class="form-group">
+        <label>Data</label>
+        <input id="fData" type="date" value="2026-09-09">
+      </div>
+    </div>
+    <div class="row-2">
+      <div class="form-group">
+        <label>Autor</label>
+        <input id="fAutor" value="João Esquik">
+      </div>
+      <div class="form-group">
+        <label>Revisor</label>
+        <input id="fRevisor" value="Equipe de Gestão">
+      </div>
+    </div>
+
+    <h2>1. Contexto e Problema</h2>
+    <div class="form-group">
+      <label>Contexto / Background</label>
+      <textarea id="fContexto" rows="4">A empresa busca aumentar sua eficiência operacional. Atualmente o setor de produção convive com desperdícios recorrentes que impactam custo e prazo de entrega.</textarea>
+    </div>
+    <div class="form-group">
+      <label>Situação Atual</label>
+      <textarea id="fSituacao" rows="4">As perdas atuais somam cerca de 12% da produção mensal, contra a meta de 3%. Os principais desperdícios ocorrem em trocas de produto e paradas não programadas.</textarea>
+    </div>
+    <div class="form-group">
+      <label>Objetivo / Meta</label>
+      <textarea id="fObjetivo" rows="3">Reduzir as perdas de 12% para 3% em 6 meses, eliminando causas raiz e padronizando o processo.</textarea>
+    </div>
+
+    <h2>2. Análise de Causas</h2>
+    <div class="form-group">
+      <label>Análise de Causa Raiz (5 Porquês)</label>
+      <textarea id="fCausas" rows="6">1. Por que há perdas? Porque há paradas frequentes na linha.\n2. Por que há paradas? Porque o setup de troca é demorado.\n3. Por que o setup é demorado? Porque não há procedimento padronizado.\n4. Por que não há padrão? Porque as instruções estão desatualizadas.\n5. Por que estão desatualizadas? Porque não há responsável pela revisão do padrão.</textarea>
+    </div>
+
+    <h2>3. Contra-medidas</h2>
+    <div class="form-group">
+      <label>Contra-medidas propostas</label>
+      <textarea id="fContramedidas" rows="4">- Implementar SMED para reduzir o tempo de setup.\n- Revisar e disponibilizar instruções de trabalho na linha.\n- Nomear responsável pela revisão periódica dos padrões.\n- Instalar indicadores visuais de perda por turno.</textarea>
+    </div>
+
+    <h2>4. Plano de Ação</h2>
+    <div class="plano-rows" id="planoRows"></div>
+    <button class="add-btn" id="addPlano">+ Adicionar ação</button>
+
+    <h2>5. Acompanhamento e Resultados</h2>
+    <div class="form-group">
+      <label>Indicadores de acompanhamento</label>
+      <textarea id="fIndicadores" rows="3">Taxa de perda mensal (%), tempo médio de setup (min), OEE da linha.</textarea>
+    </div>
+    <div class="form-group">
+      <label>Resultados esperados / obtidos</label>
+      <textarea id="fResultados" rows="4">Esperado: perdas em 3% ao final de 6 meses.\nObtido: acompanhar mensalmente com atualização deste documento.</textarea>
+    </div>
+    <div class="form-group">
+      <label>Lições aprendidas / próximos passos</label>
+      <textarea id="fLicoes" rows="3">Padronizar o método e replicar para outros setores após validar os ganhos.</textarea>
+    </div>
+  </aside>
+
+  <section class="preview-panel">
+    <div class="preview-scroll">
+      <div class="a3" id="a3Preview">
+        <div class="a3-head">
+          <div class="titulo" id="p_Titulo">&nbsp;</div>
+          <div class="meta" id="p_Meta"></div>
+        </div>
+        <div class="a3-cols">
+          <div>
+            <div class="a3-box titulo-box">
+              <h3>1. Contexto / Background</h3>
+              <div class="corpo">
+                <div class="ctx-item"><div class="ctx-titulo">Contexto</div><div class="ctx-texto vazio" id="p_Contexto"></div></div>
+                <div class="ctx-item"><div class="ctx-titulo">Situação Atual</div><div class="ctx-texto vazio" id="p_Situacao"></div></div>
+                <div class="ctx-item"><div class="ctx-titulo">Objetivo / Meta</div><div class="ctx-texto vazio" id="p_Objetivo"></div></div>
+              </div>
+            </div>
+            <div class="a3-box">
+              <h3>2. Análise de Causa Raiz</h3>
+              <div class="corpo vazio" id="p_Causas"></div>
+            </div>
+          </div>
+          <div>
+            <div class="a3-box">
+              <h3>3. Contra-medidas</h3>
+              <div class="corpo vazio" id="p_Contramedidas"></div>
+            </div>
+            <div class="a3-box">
+              <h3>4. Plano de Ação</h3>
+              <div class="corpo">
+                <table>
+                  <thead>
+                    <tr>
+                      <th style="width:44%">Ação</th>
+                      <th style="width:18%">Responsável</th>
+                      <th style="width:16%">Prazo</th>
+                      <th style="width:22%">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody id="p_Plano"></tbody>
+                </table>
+              </div>
+            </div>
+            <div class="a3-box">
+              <h3>5. Acompanhamento</h3>
+              <div class="corpo vazio" id="p_Indicadores"></div>
+            </div>
+            <div class="a3-box">
+              <h3>6. Resultados</h3>
+              <div class="corpo vazio" id="p_Resultados"></div>
+            </div>
+            <div class="a3-box">
+              <h3>7. Lições Aprendidas / Próximos Passos</h3>
+              <div class="corpo vazio" id="p_Licoes"></div>
+            </div>
+          </div>
+        </div>
+        <div class="a3-footer">
+          <span>A3 Estratégico - uma página de gestão</span>
+          <span id="p_FooterMeta"></span>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<div class="loading" id="loading"><span>Gerando PDF...</span></div>
+
+<script>
+  const $ = id => document.getElementById(id);
+
+  const melhoßerChip = s => {
+    const t = (s || '').trim().toLowerCase();
+    const cls = t === 'concluído' || t === 'concluido' ? 'badge-concluido'
+             : t === 'em andamento' ? 'badge-andamento'
+             : 'badge-naoiniciado';
+    return '<span class="status-chip ' + cls + '">' + s + '</span>';
+  };
+
+  function addPlanoRow(a, r, p, s) {
+    const div = document.createElement('div');
+    div.className = 'plano-row';
+    div.innerHTML = '<div class="campos">' +
+      '<input class="acao" placeholder="Ação" value="' + (a || '') + '">' +
+      '<div class="row-2"><input class="resp" placeholder="Responsável" value="' + (r || '') + '">' +
+      '<input class="prazo" placeholder="Prazo" value="' + (p || '') + '"></div>' +
+      '<select class="status"><option value="Não iniciado">Não iniciado</option>' +
+      '<option value="Em andamento">Em andamento</option>' +
+      '<option value="Concluído">Concluído</option></select>' +
+      '</div><button class="remover" title="Remover">x</button>';
+    const sel = div.querySelector('.status');
+    if (s) sel.value = s;
+    div.querySelectorAll('input').forEach(i => i.addEventListener('input', render));
+    div.querySelector('.status').addEventListener('change', render);
+    div.querySelector('.remover').addEventListener('click', () => { div.remove(); render(); });
+    $('planoRows').appendChild(div);
+    return div;
+  }
+
+  function render() {
+    const texto = s => (s || '').replace(/\n/g, '\n').trim();
+
+    $('p_Titulo').textContent = $('fTitulo').value.trim() || 'A3 Estratégico';
+
+    const meta = [];
+    if ($('fEmpresa').value.trim()) meta.push('<b>' + $('fEmpresa').value.trim() + '</b>');
+    const dt = $('fData').value;
+    if (dt) {
+      const partes = dt.split('-');
+      meta.push('Data: ' + partes[2] + '/' + partes[1] + '/' + partes[0]);
+    }
+    $('p_Meta').innerHTML = meta.join('<br>');
+    $('p_FooterMeta').textContent = 'Autor: ' + ($('fAutor').value.trim() || '-') + '  |  Revisor: ' + ($('fRevisor').value.trim() || '-');
+
+    const mapa = { fContexto:'p_Contexto', fSituacao:'p_Situacao', fObjetivo:'p_Objetivo',
+      fCausas:'p_Causas', fContramedidas:'p_Contramedidas', fIndicadores:'p_Indicadores',
+      fResultados:'p_Resultados', fLicoes:'p_Licoes' };
+    Object.keys(mapa).forEach(k => {
+      const el = $(mapa[k]);
+      const v = texto($(k).value);
+      el.textContent = v;
+      el.classList.toggle('vazio', !v);
+    });
+
+    const corpo = [];
+    document.querySelectorAll('#planoRows .plano-row').forEach(tr => {
+      const a = tr.querySelector('.acao').value.trim();
+      const r = tr.querySelector('.resp').value.trim();
+      const p = tr.querySelector('.prazo').value.trim();
+      const s = tr.querySelector('.status').value;
+      if (a || r || p) {
+        corpo.push('<tr><td>' + a + '</td><td>' + r + '</td><td>' + p + '</td><td>' + melhoßerChip(s) + '</td></tr>');
+      }
+    });
+    $('p_Plano').innerHTML = corpo.join('') || '<tr><td colspan="4" style="color:#aaa;font-style:italic;text-align:center">Adicione ações no formulário</td></tr>';
+  }
+
+  addPlanoRow('Revisar instruções de trabalho', 'João', '15/09', 'Em andamento');
+  addPlanoRow('Implementar SMED no setup principal', 'Operações', '30/10', 'Não iniciado');
+  addPlanoRow('Nomear responsável pela revisão de padrões', 'Gestão', '20/09', 'Concluído');
+
+  ['fTitulo','fEmpresa','fData','fAutor','fRevisor','fContexto','fSituacao','fObjetivo',
+   'fCausas','fContramedidas','fIndicadores','fResultados','fLicoes'].forEach(id => {
+    $(id).addEventListener('input', render);
+  });
+  $('addPlano').addEventListener('click', () => { addPlanoRow('','','',''); render(); });
+
+  $('btnPdf').addEventListener('click', () => {
+    const btn = $('btnPdf');
+    btn.disabled = true;
+    $('loading').classList.add('ativo');
+    const el = $('a3Preview');
+    const data = $('fData').value || new Date().toISOString().slice(0,10);
+    const arquivo = 'A3_Estrategico_' + data + '.pdf';
+    html2pdf().set({
+      margin: 0,
+      filename: arquivo,
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2, useCORS: true, letterRendering: true, backgroundColor: '#ffffff' },
+      jsPDF: { unit: 'mm', format: 'a3', orientation: 'landscape' },
+      pagebreak: { mode: ['avoid-all'] }
+    }).from(el).save().then(() => {
+      btn.disabled = false;
+      $('loading').classList.remove('ativo');
+    }).catch(() => {
+      btn.disabled = false;
+      $('loading').classList.remove('ativo');
+      alert('Não foi possível gerar o PDF. Verifique sua conexão com a internet (a biblioteca é carregada via CDN).');
+    });
+  });
+
+  render();
+</script>
+</body>
+</html>

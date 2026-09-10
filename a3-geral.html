@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ferramentas A3</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    font-family: "Segoe UI", Roboto, Arial, sans-serif;
+    background: #1f4e79;
+    color: #1f2430;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+  }
+
+  .barra-topo {
+    background: #1f4e79;
+    color: #fff;
+    padding: 10px 12px 8px;
+  }
+  .barra-topo h1 { font-size: 15px; font-weight: 700; letter-spacing: .3px; }
+  .barra-topo h1 span { font-weight: 300; font-size: 11px; opacity: .8; display: block; }
+
+  .abas {
+    display: flex;
+    gap: 4px;
+    background: #1f4e79;
+    padding: 0 12px 8px;
+    overflow-x: auto;
+    white-space: nowrap;
+    scrollbar-width: none;
+  }
+  .abas::-webkit-scrollbar { display: none; }
+  .aba {
+    background: rgba(255,255,255,.15);
+    color: #eaf1f8;
+    border: none;
+    padding: 9px 16px;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    flex-shrink: 0;
+    min-height: 40px;
+  }
+  .aba.ativo { background: #fff; color: #1f4e79; }
+
+  .painel {
+    position: relative;
+    flex: 1;
+    min-height: 0;
+  }
+  .painel iframe {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%;
+    height: 100%;
+    border: none;
+    display: none;
+    background: #e8eaf0;
+  }
+  .painel iframe.ativo { display: block; }
+</style>
+</head>
+<body>
+
+<div class="barra-topo">
+  <h1>Ferramentas A3 <span>página única com os modelos</span></h1>
+</div>
+
+<nav class="abas" id="abas"></nav>
+
+<div class="painel" id="painel"></div>
+
+<script>
+  const FERRAMENTAS = [
+    { nome: 'Estratégico', src: 'a3-estrategico.html' },
+    { nome: 'A3 Passo a Passo', src: 'a3-passo-a-passo.html' },
+    { nome: 'A3 Celular', src: 'a3-passo-a-passo-mobile.html' },
+    { nome: 'Inspeção de Segurança', src: 'inspecao-seguranca.html' }
+  ];
+  const CHAVE = 'a3geral_aba';
+
+  const abas = document.getElementById('abas');
+  const painel = document.getElementById('painel');
+  const iframes = [];
+  let atual = 0;
+  try {
+    const salvo = parseInt(localStorage.getItem(CHAVE), 10);
+    if (!isNaN(salvo) && salvo >= 0 && salvo < FERRAMENTAS.length) atual = salvo;
+  } catch (e) {}
+
+  FERRAMENTAS.forEach((f, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'aba' + (i === atual ? ' ativo' : '');
+    btn.textContent = f.nome;
+    btn.addEventListener('click', () => selecionar(i));
+    abas.appendChild(btn);
+
+    const frame = document.createElement('iframe');
+    frame.src = f.src;
+    frame.title = f.nome;
+    frame.className = i === atual ? 'ativo' : '';
+    painel.appendChild(frame);
+    iframes.push(frame);
+  });
+
+  function selecionar(i) {
+    if (i === atual) return;
+    atual = i;
+    iframes.forEach((fr, k) => fr.classList.toggle('ativo', k === i));
+    abas.querySelectorAll('.aba').forEach((a, k) => a.classList.toggle('ativo', k === i));
+    try { localStorage.setItem(CHAVE, String(i)); } catch (e) {}
+  }
+</script>
+</body>
+</html>
